@@ -626,23 +626,41 @@
   }
 
   function contributeGuild(state) {
-    const before = finalizeState(state);
-    const next = cloneState(before);
-    next.guildBuild += 20;
-    next.guildContribution += 20;
-    next.lastMessage = "你为 404 宿舍拓荒团贡献了 20 建造值。";
+    const next = cloneState(state);
+
+    // 检查是否有建造值可以贡献
+    if (next.buildValue <= 0) {
+      next.lastMessage = "建造值不足！先完成运动任务来获得建造值。";
+      const finalized = finalizeState(next);
+      finalized.lastEvent = createEvent(
+        "资源不足",
+        "无法贡献公会",
+        "你当前没有可贡献的建造值。",
+        ["当前建造值：0", "提示：完成运动任务可获得建造值"]
+      );
+      return finalized;
+    }
+
+    const before = finalizeState(next);
+    // 贡献当前所有的建造值（或者可以设置上限）
+    const contribution = Math.min(next.buildValue, 50); // 最多贡献 50
+    next.buildValue -= contribution;
+    next.guildBuild += contribution;
+    next.guildContribution += contribution;
+    next.lastMessage = `为 404 宿舍拓荒团贡献了 ${contribution} 建造值。`;
     const finalized = finalizeState(next);
     const upgraded = finalized.guildLevel > before.guildLevel;
     finalized.lastEvent = createEvent(
       "公会反馈",
-      upgraded ? "建筑升级" : "公会贡献完成",
-      upgraded ? `${finalized.guildBuildingName}完成升级，全员收益加成提高。` : "你的运动成果已转化为公会建设进度。",
+      upgraded ? "建筑升级！" : "公会贡献完成",
+      upgraded ? `恭喜！${finalized.guildBuildingName}完成升级，全员收益加成提高。` : `你的 ${contribution} 建造值已转化为公会建设进度。`,
       [
-        "建造值 +20",
+        `建造值消耗：-${contribution}`,
+        `剩余建造值：${finalized.buildValue}`,
         `建设进度：${finalized.guildBuild} / 300`,
-        upgraded ? `建筑等级：Lv.${finalized.guildLevel}` : "",
+        upgraded ? `建筑等级：Lv.${finalized.guildLevel} ← 升级！` : "",
         `全员收益加成：${finalized.guildBonusPercent}%`,
-      ]
+      ].filter(Boolean)
     );
     return finalized;
   }
