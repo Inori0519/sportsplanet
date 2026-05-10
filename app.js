@@ -137,6 +137,30 @@
     lake: { id: "lake", opponent: "经管学院", initialControl: 46 },
   };
 
+  // 模拟排行榜数据
+  const MOCK_LEADERBOARD = [
+    { id: 1, nickname: "运动达人小明", xp: 2850, workouts: 45, streak: 15, isMe: false },
+    { id: 2, nickname: "晨跑爱好者", xp: 2680, workouts: 42, streak: 12, isMe: false },
+    { id: 3, nickname: "健身小王子", xp: 2520, workouts: 38, streak: 18, isMe: false },
+    { id: 4, nickname: "瑜伽大师", xp: 2350, workouts: 35, streak: 9, isMe: false },
+    { id: 5, nickname: "篮球少年", xp: 2180, workouts: 32, streak: 7, isMe: false },
+  ];
+
+  // 模拟组队挑战
+  const TEAM_CHALLENGE = {
+    id: "weekend-warrior",
+    name: "周末勇士挑战",
+    description: "3人组队，累计运动时长达标",
+    targetMinutes: 180,
+    rewardXp: 100,
+    rewardEnergy: 80,
+    teams: [
+      { id: 1, name: "闪电战队", members: ["小明", "小红", "小刚"], progress: 165, maxMembers: 3 },
+      { id: 2, name: "慢跑俱乐部", members: ["阿强", "阿珍"], progress: 120, maxMembers: 3, canJoin: true },
+      { id: 3, name: "周末运动团", members: ["小李"], progress: 45, maxMembers: 3, canJoin: true },
+    ],
+  };
+
   const ENERGY_MODES = {
     low: {
       id: "low",
@@ -340,6 +364,12 @@
       flagCount: 0,
       lastMessage: "今天不需要完美运动，先启动就算赢。",
       lastEvent: null,
+      // 社交系统设置
+      showInLeaderboard: false,
+      useRealName: false,
+      nickname: "运动家" + Math.floor(Math.random() * 9999),
+      joinedChallenge: false,
+      teamId: null,
     };
   }
 
@@ -505,6 +535,56 @@
       return finalizeState(state);
     }
     return applyWorkoutReward(state, task);
+  }
+
+  function completeCustomWorkout(state, minutes, xpReward, energyReward, workoutType) {
+    const next = cloneState(state);
+
+    // 运动类型与校园区域的映射
+    const workoutAreaMapping = {
+      running: "track",      // 跑步 → 操场荒原
+      swimming: "gym",       // 游泳 → 体育馆堡垒
+      cycling: "lake",       // 骑行 → 湖畔森林
+      basketball: "gym",     // 篮球 → 体育馆堡垒
+      football: "track",     // 足球 → 操场荒原
+      badminton: "gym",      // 羽毛球 → 体育馆堡垒
+      fitness: "gym",        // 健身 → 体育馆堡垒
+      yoga: "library",       // 瑜伽 → 图书馆秘境
+      other: "dorm"          // 其他 → 宿舍营地
+    };
+
+    const workoutNames = {
+      running: "跑步",
+      swimming: "游泳",
+      cycling: "骑行",
+      basketball: "篮球",
+      football: "足球",
+      badminton: "羽毛球",
+      fitness: "健身",
+      yoga: "瑜伽",
+      other: "运动"
+    };
+
+    const mappedArea = workoutAreaMapping[workoutType] || "dorm";
+
+    // 创建自定义运动任务对象
+    const customTask = {
+      id: "custom",
+      name: workoutNames[workoutType] || "自定义运动",
+      type: "自定义",
+      minutes: minutes,
+      difficulty: "自定义",
+      description: `${workoutNames[workoutType] || "运动"} ${minutes} 分钟`,
+      reward: {
+        xp: xpReward,
+        energy: energyReward,
+        buildValue: Math.floor(minutes * 0.8)
+      },
+      area: mappedArea,
+      badge: null
+    };
+
+    return applyWorkoutReward(next, customTask);
   }
 
   function getCurrentTaskArea(state) {
@@ -898,6 +978,127 @@
     return finalized;
   }
 
+  // 获取排行榜（包含当前用户）
+  function getLeaderboard(state) {
+    if (!state.showInLeaderboard) {
+      return MOCK_LEADERBOARD;
+    }
+
+    const userEntry = {
+      id: 0,
+      nickname: state.useRealName ? state.nickname : `${state.nickname}${state.useRealName ? "" : " (匿名)"}`,
+      xp: state.xp,
+      workouts: state.totalWorkouts,
+      streak: state.weeklyWorkouts > 0 ? 1 : 0,
+      isMe: true,
+    };
+
+    const all = [...MOCK_LEADERBOARD, userEntry]
+      .sort((a, b) => b.xp - a.xp)
+      .map((entry, index) => ({ ...entry, rank: index + 1 }));
+
+    return all;
+  }
+
+  // 切换排行榜显示状态
+  function toggleLeaderboard(state, show) {
+    const next = cloneState(state);
+    next.showInLeaderboard = show !== undefined ? show : !next.showInLeaderboard;
+    next.lastMessage = next.showInLeaderboard
+      ? "已加入排行榜，你的数据将匿名显示。"
+      : "已退出排行榜，你的数据将不再显示。";
+    const finalized = finalizeState(next);
+    finalized.lastEvent = createEvent(
+      "社交设置",
+      next.showInLeaderboard ? "已加入排行榜" : "已退出排行榜",
+      next.showInLeaderboard
+        ? "你的运动数据将以匿名方式显示在排行榜中。"
+        : "你的数据已从排行榜中隐藏，你可以随时重新加入。",
+      next.showInLeaderboard
+        ? ["显示模式：匿名", "可以在设置中更改昵称"]
+        : ["提示：随时可以重新加入"]
+    );
+    return finalized;
+  }
+
+  // 更新昵称
+  function updateNickname(state, newNickname) {
+    const next = cloneState(state);
+    next.nickname = newNickname.trim() || "运动家" + Math.floor(Math.random() * 9999);
+    next.lastMessage = `昵称已更新为：${next.nickname}`;
+    return finalizeState(next);
+  }
+
+  // 加入队伍
+  function joinTeam(state, teamId) {
+    const next = cloneState(state);
+    const team = TEAM_CHALLENGE.teams.find((t) => t.id === teamId);
+
+    if (!team) {
+      next.lastMessage = "队伍不存在。";
+      return finalizeState(next);
+    }
+
+    if (team.members.length >= team.maxMembers) {
+      next.lastMessage = "该队伍已满员。";
+      const finalized = finalizeState(next);
+      finalized.lastEvent = createEvent(
+        "组队失败",
+        "队伍已满员",
+        "该队伍已达最大人数限制。",
+        ["请选择其他队伍或创建新队伍"]
+      );
+      return finalized;
+    }
+
+    if (next.teamId === teamId) {
+      next.lastMessage = "你已经在该队伍中。";
+      return finalizeState(next);
+    }
+
+    next.teamId = teamId;
+    next.joinedChallenge = true;
+    next.lastMessage = `成功加入「${team.name}」！`;
+    const finalized = finalizeState(next);
+    finalized.lastEvent = createEvent(
+      "组队成功",
+      `加入${team.name}`,
+      `你已加入${team.name}，当前队伍有 ${team.members.length} 人。`,
+      [
+        `队伍目标：累计运动 ${TEAM_CHALLENGE.targetMinutes} 分钟`,
+        `当前进度：${team.progress} 分钟`,
+        `完成奖励：XP +${TEAM_CHALLENGE.rewardXp} / 源力 +${TEAM_CHALLENGE.rewardEnergy}`,
+        "邀请好友一起完成挑战吧！"
+      ]
+    );
+    return finalized;
+  }
+
+  // 退出队伍
+  function leaveTeam(state) {
+    const next = cloneState(state);
+
+    if (!next.teamId) {
+      next.lastMessage = "你还没有加入任何队伍。";
+      return finalizeState(next);
+    }
+
+    const team = TEAM_CHALLENGE.teams.find((t) => t.id === next.teamId);
+    const teamName = team?.name || "队伍";
+
+    next.teamId = null;
+    next.joinedChallenge = false;
+    next.lastMessage = `已退出${teamName}。`;
+    const finalized = finalizeState(next);
+    finalized.lastEvent = createEvent(
+      "退出队伍",
+      "已退出团队挑战",
+      `你已退出${teamName}，可以随时加入其他队伍。`,
+      ["提示：队伍进度将不会保留"]
+    );
+    return finalized;
+  }
+
   function loadState() {
     if (typeof localStorage === "undefined") {
       return createDefaultState();
@@ -934,10 +1135,13 @@
     ENERGY_MODES,
     QUESTS,
     MODAL_CONTENT,
+    MOCK_LEADERBOARD,
+    TEAM_CHALLENGE,
     createDefaultState,
     getLevel,
     completeStarter,
     completeTask,
+    completeCustomWorkout,
     setSelectedAcademy,
     plantFlag,
     getFlagWar,
@@ -955,6 +1159,11 @@
     setEnergyMode,
     getQuestProgress,
     claimNextQuestReward,
+    getLeaderboard,
+    toggleLeaderboard,
+    updateNickname,
+    joinTeam,
+    leaveTeam,
     loadState,
     saveState,
     resetState,
@@ -1257,7 +1466,13 @@ function initBrowserApp(api) {
     const levelProgress = state.xp - currentLevelBase;
     const levelNeed = nextLevelXp - currentLevelBase;
 
-    setText("level", `Lv.${state.level}`);
+    // 等级进度组件
+    setText("level-badge", `Lv.${state.level}`);
+    setText("level-title", getLevelTitle(state.level));
+    setText("xp-progress-text", `${levelProgress} / ${levelNeed} XP`);
+    setBar("xp-progress", percent(levelProgress, levelNeed));
+
+    // 基础数据
     setText("xp", state.xp);
     setText("energy", state.energy);
     setText("build-value", state.buildValue);
@@ -1267,8 +1482,22 @@ function initBrowserApp(api) {
     setText("area-count", `${state.unlockedAreas.length} / ${Object.keys(api.AREAS).length}`);
     setText("guild-contribution", state.guildContribution);
     setText("status-message", state.lastMessage);
-    setText("xp-progress-text", `${levelProgress} / ${levelNeed}`);
-    setBar("xp-progress", percent(levelProgress, levelNeed));
+
+    // 里程碑进度
+    const totalDays = state.totalWorkouts;
+    const totalCal = state.weeklyMinutes * 5; // 估算：每分钟约5卡
+    const badgesUnlocked = state.unlockedBadges.length;
+    const badgesTotal = Object.keys(api.BADGES).length;
+
+    setText("total-days", totalDays);
+    setBar("total-days-progress", percent(totalDays, 30));
+
+    setText("total-cal", totalCal.toLocaleString());
+    setBar("total-cal-progress", percent(totalCal, 20000));
+
+    setText("badges-unlocked", badgesUnlocked);
+    setText("badges-total", badgesTotal);
+    setBar("badges-progress", percent(badgesUnlocked, badgesTotal));
 
     setText("timer-display", formatTime(remainingSeconds));
     setText("focus-task", api.FOCUS_TASKS[state.focusTaskIndex]);
@@ -1288,6 +1517,122 @@ function initBrowserApp(api) {
     renderQuestLine();
     renderFlagWar();
     renderReport();
+    renderLeaderboard();
+    renderTeams();
+  }
+
+  function renderLeaderboard() {
+    const container = $("leaderboard-list");
+    if (!container) return;
+
+    const leaderboard = api.getLeaderboard(state);
+    const toggle = $("leaderboard-toggle");
+    const privacySettings = $("privacy-settings");
+    const nicknameInput = $("nickname-input");
+
+    if (toggle) {
+      toggle.checked = state.showInLeaderboard;
+    }
+
+    if (privacySettings) {
+      privacySettings.style.display = state.showInLeaderboard ? "block" : "none";
+    }
+
+    if (nicknameInput) {
+      nicknameInput.value = state.nickname;
+    }
+
+    if (!state.showInLeaderboard) {
+      container.innerHTML = `
+        <div class="leaderboard-item" style="justify-content: center; text-align: center; padding: 32px;">
+          <p style="color: var(--muted); margin: 0 0 12px;">🔒 你的数据是私密的</p>
+          <p style="font-size: 13px; margin: 0;">开启"参与排行榜"后可以和好友比较运动数据</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = leaderboard.map((entry) => `
+      <div class="leaderboard-item ${entry.isMe ? "is-me" : ""}">
+        <div class="leaderboard-rank">${entry.rank}</div>
+        <div class="leaderboard-info">
+          <div class="leaderboard-name">${entry.nickname}</div>
+          <div class="leaderboard-stats">${entry.workouts} 次运动 · 🔥 ${entry.streak} 天连击</div>
+        </div>
+        <div class="leaderboard-xp">${entry.xp} XP</div>
+      </div>
+    `).join("");
+  }
+
+  function renderTeams() {
+    const container = $("team-list");
+    if (!container) return;
+
+    const challenge = api.TEAM_CHALLENGE;
+    const challengeStatus = $("challenge-status");
+
+    // 更新队伍状态显示
+    if (challengeStatus) {
+      if (state.teamId) {
+        const team = challenge.teams.find((t) => t.id === state.teamId);
+        challengeStatus.innerHTML = `<span style="background: rgba(31, 159, 120, 0.3); padding: 6px 12px; border-radius: 20px;">✓ 已加入：${team?.name || "队伍"}</span>`;
+      } else {
+        challengeStatus.innerHTML = `<span style="padding: 6px 12px; border-radius: 20px; background: rgba(0,0,0,0.05);">未加入队伍</span>`;
+      }
+    }
+
+    container.innerHTML = challenge.teams.map((team) => {
+      const isJoined = state.teamId === team.id;
+
+      // 如果用户加入了这个队伍，更新成员列表显示
+      let displayMembers = [...team.members];
+      let displayCount = team.members.length;
+
+      if (isJoined && !displayMembers.includes("我")) {
+        displayMembers.push("我");
+        displayCount += 1;
+      }
+
+      const progressPercent = Math.min((team.progress / challenge.targetMinutes) * 100, 100);
+      const canJoin = team.canJoin && !isJoined && displayCount < team.maxMembers;
+
+      return `
+        <div class="team-card ${isJoined ? "is-joined" : ""}">
+          <div class="team-card-header">
+            <div>
+              <div class="team-name">${team.name}</div>
+              <div class="team-members">${displayMembers.join("、")} (${displayCount}/${team.maxMembers})</div>
+            </div>
+            ${isJoined ? "<span style='color: var(--green); font-weight: 600;'>✓ 已加入</span>" : ""}
+          </div>
+          <div class="team-progress">
+            <div class="team-progress-bar">
+              <span class="team-progress-fill" style="width: ${progressPercent}%"></span>
+            </div>
+            <div class="team-progress-text">${team.progress} / ${challenge.targetMinutes} 分钟 · ${Math.round(progressPercent)}%</div>
+          </div>
+          <div class="team-actions">
+            ${isJoined
+              ? `<button class="secondary-action" type="button" data-action="leaveTeam">退出队伍</button>`
+              : canJoin
+                ? `<button class="primary-action" type="button" data-team-id="${team.id}">加入队伍</button>`
+                : `<button class="ghost-action" type="button" disabled style="opacity: 0.6;">${displayCount >= team.maxMembers ? "队伍已满" : "无法加入"}</button>`
+            }
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function getLevelTitle(level) {
+    const titles = {
+      1: "校园拓荒者",
+      2: "运动新星",
+      3: "校园达人",
+      4: "运动健将",
+      5: "传奇运动家",
+    };
+    return titles[level] || "传奇运动家";
   }
 
   function stopTimer() {
@@ -1295,6 +1640,60 @@ function initBrowserApp(api) {
       clearInterval(timerId);
       timerId = null;
     }
+  }
+
+  // 自定义运动计时辅助函数
+  let customWorkoutTimer = null;
+  let customWorkoutState = { duration: 0, elapsed: 0, type: "running", isRunning: false };
+
+  function updateCustomWorkoutDisplay() {
+    const elapsedMinutes = Math.floor(customWorkoutState.elapsed / 60);
+    const remainingSeconds = customWorkoutState.duration - customWorkoutState.elapsed;
+    const remainingMinutes = Math.ceil(remainingSeconds / 60);
+    const progressPercent = (customWorkoutState.elapsed / customWorkoutState.duration) * 100;
+
+    document.getElementById("custom-timer-display").textContent = formatTime(customWorkoutState.elapsed);
+    document.getElementById("custom-timer-progress").style.width = `${progressPercent}%`;
+    document.getElementById("custom-timer-elapsed").textContent = `已过 ${elapsedMinutes} 分钟`;
+    document.getElementById("custom-timer-remaining").textContent = `剩余 ${remainingMinutes} 分钟`;
+    document.getElementById("workout-status").innerHTML = "<span>🏃 运动进行中...</span>";
+  }
+
+  function completeCustomWorkout() {
+    clearInterval(customWorkoutTimer);
+    customWorkoutTimer = null;
+
+    const completedMinutes = Math.floor(customWorkoutState.elapsed / 60);
+    const workoutType = customWorkoutState.type;
+
+    // 根据运动类型和时间计算奖励
+    const baseXp = completedMinutes * 2;
+    const baseEnergy = completedMinutes * 1.5;
+    const workoutNames = {
+      running: "跑步",
+      swimming: "游泳",
+      cycling: "骑行",
+      basketball: "篮球",
+      football: "足球",
+      badminton: "羽毛球",
+      fitness: "健身",
+      yoga: "瑜伽",
+      other: "运动"
+    };
+
+    // 更新状态
+    const newState = api.completeCustomWorkout(state, completedMinutes, Math.floor(baseXp), Math.floor(baseEnergy), workoutType);
+
+    // 显示完成提示
+    document.getElementById("workout-status").innerHTML = `
+      <span>🎉 ${workoutNames[workoutType]}完成！获得 ${Math.floor(baseXp)} XP，${Math.floor(baseEnergy)} 源力</span>
+    `;
+
+    // 重置UI
+    setTimeout(() => {
+      document.querySelector('[data-action="resetCustomWorkout"]').click();
+      commit(newState, { feedback: true });
+    }, 2000);
   }
 
   function bindActions() {
@@ -1341,7 +1740,108 @@ function initBrowserApp(api) {
         remainingSeconds = 180;
         commit(api.resetState());
       },
+      leaveTeam: () => commit(api.leaveTeam(state), { feedback: true }),
+
+      // 自定义运动计时功能
+      startCustomWorkout: () => {
+        const duration = parseInt(document.getElementById("workout-duration").value) || 30;
+        const workoutType = document.getElementById("workout-type").value;
+
+        if (!customWorkoutTimer) {
+          customWorkoutState = {
+            duration: duration * 60, // 转换为秒
+            elapsed: 0,
+            type: workoutType,
+            isRunning: true
+          };
+
+          document.getElementById("workout-duration").disabled = true;
+          document.getElementById("workout-type").disabled = true;
+          document.querySelector('[data-action="pauseCustomWorkout"]').disabled = false;
+          document.querySelector('[data-action="resetCustomWorkout"]').disabled = false;
+          document.querySelector('[data-action="startCustomWorkout"]').textContent = "运动中...";
+
+          customWorkoutTimer = setInterval(() => {
+            if (customWorkoutState.isRunning) {
+              customWorkoutState.elapsed++;
+              updateCustomWorkoutDisplay();
+
+              if (customWorkoutState.elapsed >= customWorkoutState.duration) {
+                completeCustomWorkout();
+              }
+            }
+          }, 1000);
+        }
+      },
+
+      pauseCustomWorkout: () => {
+        if (customWorkoutTimer) {
+          customWorkoutState.isRunning = !customWorkoutState.isRunning;
+          const pauseBtn = document.querySelector('[data-action="pauseCustomWorkout"]');
+          pauseBtn.textContent = customWorkoutState.isRunning ? "暂停" : "继续";
+
+          if (!customWorkoutState.isRunning) {
+            document.getElementById("workout-status").innerHTML = "<span>运动已暂停</span>";
+          } else {
+            document.getElementById("workout-status").innerHTML = "<span>运动进行中...</span>";
+          }
+        }
+      },
+
+      resetCustomWorkout: () => {
+        if (customWorkoutTimer) {
+          clearInterval(customWorkoutTimer);
+          customWorkoutTimer = null;
+        }
+
+        customWorkoutState = { duration: 0, elapsed: 0, type: "running", isRunning: false };
+
+        document.getElementById("custom-timer-display").textContent = "00:00";
+        document.getElementById("custom-timer-progress").style.width = "0%";
+        document.getElementById("custom-timer-elapsed").textContent = "已过 0 分钟";
+        document.getElementById("custom-timer-remaining").textContent = "剩余 30 分钟";
+        document.getElementById("workout-status").innerHTML = "<span>准备好开始运动了吗？</span>";
+
+        document.getElementById("workout-duration").disabled = false;
+        document.getElementById("workout-type").disabled = false;
+        document.querySelector('[data-action="pauseCustomWorkout"]').disabled = true;
+        document.querySelector('[data-action="resetCustomWorkout"]').disabled = true;
+        document.querySelector('[data-action="startCustomWorkout"]').textContent = "开始运动";
+        document.querySelector('[data-action="pauseCustomWorkout"]').textContent = "暂停";
+      },
     };
+
+    all("[data-action]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = actions[button.dataset.action];
+        if (action) action();
+      });
+    });
+
+    // 排行榜切换
+    $("leaderboard-toggle")?.addEventListener("change", (e) => {
+      commit(api.toggleLeaderboard(state, e.target.checked), { feedback: true });
+    });
+
+    // 组队操作 - 使用事件委托处理动态生成的按钮
+    document.addEventListener("click", (e) => {
+      // 处理加入队伍按钮
+      const teamButton = e.target.closest("[data-team-id]");
+      if (teamButton) {
+        commit(api.joinTeam(state, parseInt(teamButton.dataset.teamId)), { feedback: true });
+        return;
+      }
+
+      // 处理更新昵称按钮
+      const updateNicknameButton = e.target.closest("#update-nickname");
+      if (updateNicknameButton) {
+        const input = $("nickname-input");
+        if (input) {
+          commit(api.updateNickname(state, input.value));
+        }
+        return;
+      }
+    });
 
     all("[data-action]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -1368,6 +1868,26 @@ function initBrowserApp(api) {
       });
     });
 
+    // 自定义运动类型选择器事件监听
+    const workoutTypeSelect = $("workout-type");
+    if (workoutTypeSelect) {
+      workoutTypeSelect.addEventListener("change", () => {
+        const selectedOption = workoutTypeSelect.options[workoutTypeSelect.selectedIndex];
+        const areaId = selectedOption.dataset.area;
+        const areaNames = {
+          dorm: "宿舍营地",
+          track: "操场荒原",
+          library: "图书馆秘境",
+          gym: "体育馆堡垒",
+          lake: "湖畔森林"
+        };
+        const targetAreaElement = $("target-area");
+        if (targetAreaElement) {
+          targetAreaElement.textContent = areaNames[areaId] || "宿舍营地";
+        }
+      });
+    }
+
     all("[data-modal]").forEach((button) => {
       button.addEventListener("click", () => {
         openModal(button.dataset.modal);
@@ -1385,6 +1905,35 @@ function initBrowserApp(api) {
         closeModal();
       }
     });
+
+    // 底部导航栏事件 - 页面切换模式
+    all(".bottom-nav-item").forEach((button) => {
+      button.addEventListener("click", () => {
+        const pageName = button.dataset.page;
+        switchPage(pageName);
+      });
+    });
+
+    // 页面切换函数
+    function switchPage(pageName) {
+      // 隐藏所有页面
+      all(".page-section").forEach((page) => {
+        page.classList.remove("is-active");
+      });
+
+      // 显示目标页面
+      const targetPage = document.querySelector(`.page-section[data-page="${pageName}"]`);
+      if (targetPage) {
+        targetPage.classList.add("is-active");
+        // 滚动到顶部
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // 更新导航激活状态
+      all(".bottom-nav-item").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.dataset.page === pageName);
+      });
+    }
   }
 
   document.addEventListener("DOMContentLoaded", () => {

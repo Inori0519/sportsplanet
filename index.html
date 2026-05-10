@@ -10,36 +10,41 @@
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#home" aria-label="跃动星球首页">
+        <a class="brand" href="#" data-page="home" aria-label="跃动星球首页">
           <span class="brand-mark">YP</span>
           <span>
             <strong>跃动星球</strong>
             <small>校园运动激励工具</small>
           </span>
         </a>
-        <nav class="nav-links" aria-label="页面导航">
-          <a href="#home">首页</a>
-          <a href="#tasks">任务</a>
-          <a href="#starter">启动舱</a>
-          <a href="#focus">Focus</a>
-          <a href="#journey">路线</a>
-          <a href="#map">地图</a>
-          <a href="#flag-war">插旗</a>
-          <a href="#badges">成就</a>
-          <a href="#alliance">星盟</a>
-          <a href="#league">联赛</a>
-          <a href="#report">周报</a>
-        </nav>
         <button class="info-action" type="button" data-modal="overview">作品说明</button>
       </header>
 
-      <main>
-        <section class="section home-section" id="home">
+      <main class="main-content">
+        <!-- 首页：等级进度、里程碑、数据卡片 -->
+        <div class="page-section is-active" data-page="home">
+          <section class="section home-section">
           <div class="section-inner dashboard-grid">
             <div class="dashboard-main">
-              <p class="eyebrow"><span id="level">Lv.1</span> 校园拓荒者</p>
-              <h1>今天先动 3 分钟，就能点亮一块星球。</h1>
+              <!-- 等级进度组件 -->
+              <div class="level-progress-header">
+                <div class="level-info">
+                  <div class="level-badge" id="level-badge">Lv.1</div>
+                  <div>
+                    <p class="eyebrow"><span id="level-title">校园拓荒者</span></p>
+                    <h1>今天先动 3 分钟，就能点亮一块星球。</h1>
+                  </div>
+                </div>
+                <div class="level-xp">
+                  <div class="xp-bar">
+                    <span id="xp-progress"></span>
+                  </div>
+                  <div class="xp-text" id="xp-progress-text">0 / 100 XP</div>
+                </div>
+              </div>
+
               <p class="lead" id="status-message" aria-live="polite">今天不需要完美运动，先启动就算赢。</p>
+
               <div class="hero-actions">
                 <button class="primary-action" type="button" data-action="startStarter">先动 3 分钟</button>
                 <button class="secondary-action" type="button" data-action="completeTask">完成今日任务</button>
@@ -47,18 +52,9 @@
                 <button class="ghost-action" type="button" data-modal="overview">演示导览</button>
               </div>
               <div class="submission-strip" aria-label="作品亮点">
-                <span>8 模块闭环</span>
+                <span>6 模块闭环</span>
                 <span>ADHD 友好</span>
                 <span>本地进度保存</span>
-              </div>
-              <div class="progress-block">
-                <div class="progress-label">
-                  <span>等级进度</span>
-                  <strong id="xp-progress-text">0 / 100</strong>
-                </div>
-                <div class="progress-track" aria-hidden="true">
-                  <span id="xp-progress"></span>
-                </div>
               </div>
             </div>
 
@@ -96,10 +92,53 @@
                 <strong id="guild-contribution">0</strong>
               </article>
             </div>
+
+            <!-- 里程碑进度 -->
+            <div class="milestone-grid">
+              <article class="milestone-card">
+                <div class="milestone-header">
+                  <span class="milestone-icon">🔥</span>
+                  <div class="milestone-info">
+                    <span class="milestone-label">累计运动天数</span>
+                    <strong><span id="total-days">0</span> / 30 天</strong>
+                  </div>
+                </div>
+                <div class="milestone-track">
+                  <span id="total-days-progress" class="milestone-bar milestone-bar-orange"></span>
+                </div>
+              </article>
+              <article class="milestone-card">
+                <div class="milestone-header">
+                  <span class="milestone-icon">⚡</span>
+                  <div class="milestone-info">
+                    <span class="milestone-label">累计消耗能量</span>
+                    <strong><span id="total-cal">0</span> / 20,000</strong>
+                  </div>
+                </div>
+                <div class="milestone-track">
+                  <span id="total-cal-progress" class="milestone-bar milestone-bar-yellow"></span>
+                </div>
+              </article>
+              <article class="milestone-card">
+                <div class="milestone-header">
+                  <span class="milestone-icon">🏆</span>
+                  <div class="milestone-info">
+                    <span class="milestone-label">成就解锁</span>
+                    <strong><span id="badges-unlocked">0</span> / <span id="badges-total">11</span></strong>
+                  </div>
+                </div>
+                <div class="milestone-track">
+                  <span id="badges-progress" class="milestone-bar milestone-bar-purple"></span>
+                </div>
+              </article>
+            </div>
           </div>
         </section>
+        </div>
 
-        <section class="section" id="tasks">
+        <!-- 任务页：今日任务、Focus Move -->
+        <div class="page-section" data-page="tasks">
+          <section class="section" id="tasks">
           <div class="section-inner split-layout">
             <div>
               <p class="eyebrow">今日任务</p>
@@ -142,28 +181,7 @@
           </div>
         </section>
 
-        <section class="section accent-section" id="starter">
-          <div class="section-inner starter-grid">
-            <div>
-              <p class="eyebrow">三分钟启动舱</p>
-              <div class="heading-with-action">
-                <h2>先启动，再决定要不要继续</h2>
-                <button class="module-note" type="button" data-modal="starter" aria-label="查看三分钟启动舱说明" title="查看三分钟启动舱说明">?</button>
-              </div>
-              <p class="section-copy">三分钟也算数。完成后会点亮宿舍营地，并解锁三分钟勇者。</p>
-            </div>
-            <div class="timer-panel">
-              <div class="timer-display" id="timer-display">03:00</div>
-              <div class="timer-actions">
-                <button class="primary-action" type="button" data-action="startStarter">开始</button>
-                <button class="secondary-action" type="button" data-action="pauseTimer">暂停</button>
-                <button class="secondary-action" type="button" data-action="resetTimer">重置</button>
-                <button class="ghost-action" type="button" data-action="completeStarter">演示完成</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
+        <!-- Focus Move -->
         <section class="section" id="focus">
           <div class="section-inner focus-layout">
             <div>
@@ -189,7 +207,95 @@
             </article>
           </div>
         </section>
+        </div>
 
+        <!-- 运动页：三分钟启动舱、自定义计时、冒险线 -->
+        <div class="page-section" data-page="sports">
+          <!-- 三分钟启动舱 -->
+          <section class="section accent-section" id="starter">
+          <div class="section-inner starter-grid">
+            <div>
+              <p class="eyebrow">三分钟启动舱</p>
+              <div class="heading-with-action">
+                <h2>先启动，再决定要不要继续</h2>
+                <button class="module-note" type="button" data-modal="starter" aria-label="查看三分钟启动舱说明" title="查看三分钟启动舱说明">?</button>
+              </div>
+              <p class="section-copy">三分钟也算数。完成后会点亮宿舍营地，并解锁三分钟勇者。</p>
+            </div>
+            <div class="timer-panel">
+              <div class="timer-display" id="timer-display">03:00</div>
+              <div class="timer-actions">
+                <button class="primary-action" type="button" data-action="startStarter">开始</button>
+                <button class="secondary-action" type="button" data-action="pauseTimer">暂停</button>
+                <button class="secondary-action" type="button" data-action="resetTimer">重置</button>
+                <button class="ghost-action" type="button" data-action="completeStarter">演示完成</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 自定义运动计时 -->
+        <section class="section" id="custom-workout">
+          <div class="section-inner custom-workout-layout">
+            <div>
+              <p class="eyebrow">自定义运动</p>
+              <div class="heading-with-action">
+                <h2>自由计时，记录你的专属运动</h2>
+                <button class="module-note" type="button" data-modal="customWorkout" aria-label="查看自定义运动说明" title="查看自定义运动说明">?</button>
+              </div>
+              <p class="section-copy">跑步、游泳、骑行、球类...任何运动都可以记录。设置目标时长，开始运动吧！</p>
+
+              <div class="workout-settings">
+                <div class="setting-row">
+                  <label>运动类型</label>
+                  <select id="workout-type" class="workout-select">
+                    <option value="running" data-area="track">跑步 → 操场荒原</option>
+                    <option value="swimming" data-area="gym">游泳 → 体育馆堡垒</option>
+                    <option value="cycling" data-area="lake">骑行 → 湖畔森林</option>
+                    <option value="basketball" data-area="gym">篮球 → 体育馆堡垒</option>
+                    <option value="football" data-area="track">足球 → 操场荒原</option>
+                    <option value="badminton" data-area="gym">羽毛球 → 体育馆堡垒</option>
+                    <option value="fitness" data-area="gym">健身 → 体育馆堡垒</option>
+                    <option value="yoga" data-area="library">瑜伽 → 图书馆秘境</option>
+                    <option value="other" data-area="dorm">其他 → 宿舍营地</option>
+                  </select>
+                </div>
+                <div class="setting-row">
+                  <label>目标时长（分钟）</label>
+                  <input type="number" id="workout-duration" class="workout-input" value="30" min="1" max="180">
+                </div>
+              </div>
+
+              <div class="workout-area-info" id="workout-area-info">
+                <span>📍 完成后将点亮：<strong id="target-area">操场荒原</strong></span>
+              </div>
+
+              <div class="button-row">
+                <button class="primary-action" type="button" data-action="startCustomWorkout">开始运动</button>
+                <button class="secondary-action" type="button" data-action="pauseCustomWorkout" disabled>暂停</button>
+                <button class="ghost-action" type="button" data-action="resetCustomWorkout" disabled>重置</button>
+              </div>
+            </div>
+
+            <div class="custom-timer-panel">
+              <div class="custom-timer-display" id="custom-timer-display">00:00</div>
+              <div class="custom-timer-progress">
+                <div class="progress-track">
+                  <span id="custom-timer-progress" class="progress-bar"></span>
+                </div>
+                <div class="progress-label">
+                  <span id="custom-timer-elapsed">已过 0 分钟</span>
+                  <span id="custom-timer-remaining">剩余 30 分钟</span>
+                </div>
+              </div>
+              <div class="workout-status" id="workout-status">
+                <span>准备好开始运动了吗？</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 冒险线 -->
         <section class="section journey-section" id="journey">
           <div class="section-inner journey-layout">
             <div>
@@ -209,8 +315,11 @@
             <div class="quest-grid" id="quest-grid"></div>
           </div>
         </section>
+        </div>
 
-        <section class="section map-section" id="map">
+        <!-- 地图页：点亮、插旗赛、拓荒信号 -->
+        <div class="page-section" data-page="map">
+          <section class="section map-section" id="map">
           <div class="section-inner">
             <div class="section-heading">
               <p class="eyebrow">校园地图</p>
@@ -259,17 +368,31 @@
           </div>
         </section>
 
-        <section class="section" id="badges">
+        <!-- 拓荒信号 -->
+        <section class="section signal-section" id="signals">
           <div class="section-inner">
             <div class="section-heading">
-              <p class="eyebrow">成就徽章</p>
-              <h2>每一次启动都有可见回声</h2>
+              <p class="eyebrow">拓荒信号</p>
+              <h2>发现其他区域的运动者</h2>
             </div>
-            <div class="badge-grid" id="badge-grid"></div>
+            <article class="signal-panel">
+              <p class="section-copy">看看哪些区域有其他拓荒者正在运动，给他们发送加油光点吧！</p>
+              <ul class="signal-list">
+                <li>操场荒原：<strong>8</strong> 名拓荒者</li>
+                <li>体育馆堡垒：<strong>5</strong> 名拓荒者</li>
+                <li>湖畔森林：<strong>3</strong> 名拓荒者</li>
+                <li>图书馆秘境：<strong>2</strong> 名拓荒者</li>
+                <li>宿舍营地：<strong>12</strong> 名拓荒者</li>
+              </ul>
+              <button class="primary-action" type="button" data-action="sendCheer">发送加油光点</button>
+            </article>
           </div>
         </section>
+        </div>
 
-        <section class="section alliance-section" id="alliance">
+        <!-- 社交页：公会、排行榜、组队挑战、学院圣杯 -->
+        <div class="page-section" data-page="social">
+          <section class="section alliance-section" id="alliance">
           <div class="section-inner alliance-grid">
             <article class="alliance-panel">
               <p class="eyebrow">公会浮空岛</p>
@@ -305,17 +428,6 @@
               <p>你的公会伤害 <strong id="boss-damage">0</strong></p>
               <button class="primary-action" type="button" data-action="attackBoss">攻击 Boss <span class="resource-cost">-10 XP / -15 源力</span></button>
             </article>
-
-            <article class="alliance-panel">
-              <p class="eyebrow">拓荒信号</p>
-              <h2>匿名加油光点</h2>
-              <ul class="signal-list">
-                <li>操场荒原：8 名拓荒者</li>
-                <li>体育馆堡垒：5 名拓荒者</li>
-                <li>湖畔森林：3 名拓荒者</li>
-              </ul>
-              <button class="primary-action" type="button" data-action="sendCheer">发送加油光点</button>
-            </article>
           </div>
         </section>
 
@@ -343,6 +455,76 @@
           </div>
         </section>
 
+        <section class="section" id="leaderboard">
+          <div class="section-inner">
+            <div class="section-heading">
+              <p class="eyebrow">排行榜与组队</p>
+              <h2>可选参与的社交活动</h2>
+            </div>
+
+            <!-- 隐私设置 -->
+            <div class="privacy-card">
+              <div class="privacy-header">
+                <div>
+                  <h3>隐私设置</h3>
+                  <p class="text-muted">你的数据默认不公开，可选择是否参与排行榜</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="leaderboard-toggle">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">参与排行榜</span>
+                </label>
+              </div>
+              <div class="privacy-settings" id="privacy-settings" style="display: none;">
+                <div class="setting-row">
+                  <label>显示昵称</label>
+                  <input type="text" id="nickname-input" placeholder="输入昵称" maxlength="10">
+                  <button class="secondary-action" type="button" id="update-nickname">更新</button>
+                </div>
+                <p class="text-small text-muted">提示：默认使用匿名昵称，不会显示真实信息</p>
+              </div>
+            </div>
+
+            <!-- 排行榜 -->
+            <div class="leaderboard-section">
+              <h3>🏆 好友排行榜</h3>
+              <div class="leaderboard-list" id="leaderboard-list"></div>
+            </div>
+
+            <!-- 组队挑战 -->
+            <div class="challenge-section">
+              <h3>👥 周末组队挑战</h3>
+              <div class="challenge-banner">
+                <div class="challenge-info">
+                  <h4 id="challenge-name">周末勇士挑战</h4>
+                  <p id="challenge-desc">3人组队，累计运动时长达标</p>
+                  <div class="challenge-reward">
+                    <span>完成奖励：</span>
+                    <strong id="challenge-reward">XP +100 / 源力 +80</strong>
+                  </div>
+                </div>
+                <div class="challenge-status" id="challenge-status">
+                  <span>未加入队伍</span>
+                </div>
+              </div>
+              <div class="team-list" id="team-list"></div>
+            </div>
+          </div>
+        </section>
+        </div>
+
+        <!-- 成就页：成就徽章、本周周报 -->
+        <div class="page-section" data-page="badges">
+          <section class="section" id="badges">
+          <div class="section-inner">
+            <div class="section-heading">
+              <p class="eyebrow">成就徽章</p>
+              <h2>每一次启动都有可见回声</h2>
+            </div>
+            <div class="badge-grid" id="badge-grid"></div>
+          </div>
+        </section>
+
         <section class="section report-section" id="report">
           <div class="section-inner report-grid">
             <div>
@@ -365,7 +547,57 @@
             <button class="ghost-action reset-button" type="button" data-action="resetAll">重置演示数据</button>
           </div>
         </section>
+        </div>
       </main>
+
+      <!-- 底部导航栏 -->
+      <nav class="bottom-nav">
+        <button class="bottom-nav-item is-active" data-page="home" aria-label="首页">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          <span>首页</span>
+        </button>
+        <button class="bottom-nav-item" data-page="tasks" aria-label="任务">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+          <span>任务</span>
+        </button>
+        <button class="bottom-nav-item" data-page="sports" aria-label="运动">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+            <line x1="6" y1="1" x2="6" y2="4"></line>
+            <line x1="10" y1="1" x2="10" y2="4"></line>
+            <line x1="14" y1="1" x2="14" y2="4"></line>
+          </svg>
+          <span>运动</span>
+        </button>
+        <button class="bottom-nav-item" data-page="map" aria-label="地图">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+          </svg>
+          <span>地图</span>
+        </button>
+        <button class="bottom-nav-item" data-page="social" aria-label="社交">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span>社交</span>
+        </button>
+        <button class="bottom-nav-item" data-page="badges" aria-label="成就">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="7"></circle>
+            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+          </svg>
+          <span>成就</span>
+        </button>
+      </nav>
     </div>
     <div class="modal-backdrop" id="info-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-body" hidden>
       <div class="modal-panel">
